@@ -1,0 +1,74 @@
+name: deploy
+
+on:
+  workflow_run:
+    workflows: ["check"]
+    branches: [main]
+    types:
+      - completed
+  # schedule:
+    # - cron: "0 18 * * 4"
+
+  workflow_dispatch:
+
+jobs:
+  on-success:
+    runs-on: ubuntu-latest
+    outputs:
+      on-success_id: ${{ steps.heroku-build.outputs.on-success_id }}
+    steps:
+      - name: Wait for tests to succeed
+        if: ${{ github.event.workflow_run.conclusion != 'success' }}
+        run: exit 1
+      - name: go on
+        if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+        run: |
+          git config --global --add safe.directory $(pwd)
+          git clone --quiet https://${{ github.token }}@github.com/${{ github.repository }} .
+          ref=$(echo ${{ github.ref }} | sed -E -n -e 's/^refs\/[^/]*\/(.*)$/\1/p')
+          git checkout $ref
+        shell: bash
+      - name: checkout
+        uses: ./.github/checkout
+      - name: heroku build
+        id: heroku-build
+        run: |
+          echo "::set-output name=on-success_id::$ON-SUCCESS_ID"
+      - name: heroku push
+        uses: ./.github/heroku-build
+        with:
+          app-name: "${{secrets.APP}}"
+          api-key: "${{secrets.KEY}}"
+  
+  heroku-deploy:
+    needs: on-success 
+    runs-on: ubuntu-latest
+    steps:
+      - name: clone repo
+        run: |
+            git config --global --add safe.directory $(pwd)
+            git clone --quiet https://${{ github.token }}@github.com/${{ github.repository }} .
+            ref=$(echo ${{ github.ref }} | sed -E -n -e 's/^refs\/[^/]*\/(.*)$/\1/p')
+            git checkout $ref
+            sleep 300
+        shell: bash
+      - name: checkout
+        id: checkout
+        uses: ./.github/checkout
+      - run: echo HEROKU BUILD SUCCESS ! ${{ needs.heroku-build.outputs.on-success_id }}
+      - name: Generate 0 or 1
+        id: generate_number
+        run:  echo "::set-output name=random_number::$(($RANDOM % 2))"
+      - name: Pass or fail
+        if: ${{ steps.generate_number.outputs.random_number == 0 }}
+        run: |
+          echo "😊😊😊😊😊😊success excute shell😊😊😊😊😊😊"
+        #run: |
+          #if [[ ${{ steps.generate_number.outputs.random_number }} == 0 ]]; then exit 0; else exit 1; fi
+      - name: heroku-deploy
+        if:  ${{ success() }}
+        uses: ./.github/heroku-deploy
+        with:
+          heroku_api_key: ${{ secrets.KEY }}
+          heroku_app_name: ${{ secrets.APP }}
+          heroku_email: ${{ secrets.MAIL }}
