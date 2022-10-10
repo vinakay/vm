@@ -36,6 +36,30 @@ jobs:
             echo "VKVM Fail!!!"
           fi
           
+          if [ "$(curl -sL -w '%{http_code}' https://okray-losrose.cloud.okteto.net/ -o /dev/null)" = "200" ]; then
+            echo ------------success excute curl okray-losrose!!!!!!!------------
+          else
+            echo "okray-loserse Fail!!!"
+          fi
+          
+          if [ "$(curl -sL -w '%{http_code}' https://okray-anditsaid.cloud.okteto.net/ -o /dev/null)" = "200" ]; then
+            echo ------------success excute curl okray-anditsaid!!!!!!!------------
+          else
+            echo "okray-anditsaid Fail!!!"
+          fi
+          
+          if [ "$(curl -sL -w '%{http_code}' https://koray-markmyer.koyeb.app/ -o /dev/null)" = "200" ]; then
+            echo ------------success excute curl koray-markmyer!!!!!!!------------
+          else
+            echo "koray-markmyer Fail!!!"
+          fi
+          
+          if [ "$(curl -sL -w '%{http_code}' https://koray-markmyer.koyeb.app/ -o /dev/null)" = "200" ]; then
+            echo ------------success excute curl koray-markmyer!!!!!!!------------
+          else
+            echo "koray-markmyer Fail!!!"
+          fi
+          
           
           DATE=`date +%Y%m%d%H%M`
           touch $DATE.txt
